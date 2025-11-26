@@ -30,22 +30,12 @@ jobs:
           # 1. バージョン取得
           VERSION=$(npm pkg get version | tr -d '"')
 
-          # 2. リポジトリ名取得
-          REPO_NAME=$(echo "${{ github.repository }}" | awk -F / '{print $2}')
-
-          # 3. Astro用環境変数の設定
-          # site: https://[組織名].github.io
-          SITE_URL="https://${{ github.repository_owner }}.github.io"
-
-          # base: /[リポジトリ名]/[バージョン番号]
-          BASE_PATH="/${REPO_NAME}/${VERSION}"
-
           echo "Building version: $VERSION"
-          echo "Base Path: $BASE_PATH"
 
-          # 4. ビルド実行
-          export ASTRO_SITE=$SITE_URL
-          export ASTRO_BASE=$BASE_PATH
+          # 2. Astro用環境変数の設定
+          export ASTRO_SITE="https://${{ github.repository_owner }}.github.io"
+
+          # 3. ビルド実行
           npm run build
 
           # 後続のステップに変数を渡す
