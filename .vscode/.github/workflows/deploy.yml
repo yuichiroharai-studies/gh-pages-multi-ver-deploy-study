@@ -1,0 +1,62 @@
+name: Deploy Versioned Astro to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # gh-pagesブランチへの書き込み権限が必要
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Extract Version and Build
+        id: build
+        run: |
+          # 1. バージョン取得
+          VERSION=$(npm pkg get version | tr -d '"')
+
+          # 2. リポジトリ名取得
+          REPO_NAME=$(echo "${{ github.repository }}" | awk -F / '{print $2}')
+
+          # 3. Astro用環境変数の設定
+          # site: https://[組織名].github.io
+          SITE_URL="https://${{ github.repository_owner }}.github.io"
+
+          # base: /[リポジトリ名]/[バージョン番号]
+          BASE_PATH="/${REPO_NAME}/${VERSION}"
+
+          echo "Building version: $VERSION"
+          echo "Base Path: $BASE_PATH"
+
+          # 4. ビルド実行
+          export ASTRO_SITE=$SITE_URL
+          export ASTRO_BASE=$BASE_PATH
+          npm run build
+
+          # 後続のステップに変数を渡す
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Deploy to GitHub Pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          # ここが重要: バージョン番号のフォルダの中にデプロイする
+          destination_dir: ${{ steps.build.outputs.VERSION }}
+          # ここが重要: 既存のファイル（過去バージョン）を消さない
+          keep_files: true
