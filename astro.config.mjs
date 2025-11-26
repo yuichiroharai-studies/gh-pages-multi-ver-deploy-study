@@ -6,6 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   site: process.env.ASTRO_SITE || "http://localhost:4321",
   base: process.env.ASTRO_BASE || "/",
+  server: {
+    host: true,
+  },
   vite: {
     plugins: [tailwindcss()],
   },
